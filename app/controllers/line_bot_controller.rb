@@ -42,18 +42,20 @@ class LineBotController < ApplicationController
         }
     response = http_client.get(url,query) # http_clientインスタンス変数のgetメソッドを使用。第一引数にurl第二引数にパラメーターを指定。
     response = JSON.parse(response.body) # 文字列からハッシュ形式に変更
-
-    text = ''
-    response['hotels'].each do |hotel|
+    if response.key?('error') # key?(引数)メソッドは引数で指定したキー名が存在した場合にtrueを返す
+      text = "この検索条件に該当する宿泊施設が見つかりませんでした。\n条件を変えて再検索してください。"
+    else
+      text = ''
+      response['hotels'].each do |hotel|
         text <<
           hotel[0]['hotelBasicInfo']['hotelName'] + "\n" +
           hotel[0]['hotelBasicInfo']['hotelInformationUrl'] + "\n" +
           "\n"
+      end
     end
-    message = {
-      type: 'text',
-      text: text
-    }
-
+      message = {
+        type: 'text',
+        text: text
+      }
   end
 end
