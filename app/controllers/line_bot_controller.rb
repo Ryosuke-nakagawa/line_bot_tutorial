@@ -13,10 +13,7 @@ class LineBotController < ApplicationController
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
-          message = {
-            type: 'text',
-            text: event.message['text']
-          }
+          message = search_and_create_message(event.message['text'])
           client.reply_message(event['replyToken'],message)
         end
       end
@@ -31,5 +28,32 @@ class LineBotController < ApplicationController
     config.channel_secret = ENV["LINE_CHANNEL_SECRET"] # 環境変数から設定値を受け取る
     config.channel_token = ENV["LINE_CHANNEL_TOKEN"]
     }
+  end
+
+  def search_and_create_message(keyword)
+    http_client = HTTPClient.new
+    url = 'https://app.rakuten.co.jp/services/api/Travel/KeywordHotelSearch/20170426'
+    query = {
+        'keyword' => keyword,
+        'applicationId' => ENV['RAKUTEN_APPID'],
+        'hits' => 5,
+        'responseType' => 'small',
+        'formatVersion' => 2
+        }
+    response = http_client.get(url,query) # http_clientインスタンス変数のgetメソッドを使用。第一引数にurl第二引数にパラメーターを指定。
+    response = JSON.parse(response.body) # 文字列からハッシュ形式に変更
+
+    text = ''
+    response['hotels'].each do |hotel|
+        text <<
+          hotel[0]['hotelBasicInfo']['hotelName'] + "\n" +
+          hotel[0]['hotelBasicInfo']['hotelInformationUrl'] + "\n" +
+          "\n"
+    end
+    message = {
+      type: 'text',
+      text: text
+    }
+
   end
 end
